@@ -20,7 +20,9 @@ import { mapActions, mapMutations, mapState } from 'vuex'
 import CommonUtils from '@/util/common-util'
 import { TermsOfUseDocument } from '@/models/TermsOfUseDocument'
 import { User } from '@/models/user'
+import UserModule from '@/store/modules/user'
 import documentService from '@/services/document.services.ts'
+import { getModule } from 'vuex-module-decorators'
 
 @Component({
   computed: {
@@ -37,6 +39,7 @@ import documentService from '@/services/document.services.ts'
   }
 })
 export default class TermsOfUse extends Vue {
+  private userModule = getModule(UserModule, this.$store)
   private readonly getTermsOfUse!: (docType?: string) => TermsOfUseDocument
   private termsContent = ''
   protected readonly userProfile!: User
@@ -46,8 +49,8 @@ export default class TermsOfUse extends Vue {
 
   async mounted () {
     const termsOfService = await this.getTermsOfUse(this.tosType)
-    this.termsContent = termsOfService.content
-    const hasLatestTermsAccepted = this.hasAcceptedLatestTos(termsOfService.versionId)
+    this.termsContent = termsOfService?.content
+    const hasLatestTermsAccepted = this.hasAcceptedLatestTos(termsOfService?.versionId)
     if (!hasLatestTermsAccepted) {
       this.$emit('tos-version-updated')
     }
