@@ -8,66 +8,75 @@
         :class="{'selected': isPaymentSelected(payment)}"
         v-for="payment in allowedPaymentMethods"
         :key="payment.type"
-        @click="selectPayment(payment)"
+        @click="paymentMethodSelected(payment)"
       >
-        <div class="d-flex">
-          <div class="mt-n2 mr-8">
-            <v-icon x-large color="primary">{{payment.icon}}</v-icon>
-          </div>
-
-          <div class="payment-card-contents">
-            <div>
-              <div class="title font-weight-bold mt-n2 payment-title">{{payment.title}}</div>
+        <div>
+          <header class="d-flex align-center">
+            <div class="payment-icon-container mt-n2">
+              <v-icon x-large color="primary">{{payment.icon}}</v-icon>
+            </div>
+            <div class="pr-8">
+              <h3 class="title font-weight-bold payment-title mt-n1">{{payment.title}}</h3>
               <div>{{payment.subtitle}}</div>
             </div>
+            <v-btn
+              large
+              depressed
+              color="primary"
+              width="120"
+              class="font-weight-bold ml-auto"
+              :outlined="!isPaymentSelected(payment)"
+              @click="paymentMethodSelected(payment)"
+              :aria-label="'Select' + ' ' + payment.title"
+            >
+              <span>{{(isPaymentSelected(payment)) ? 'SELECTED' : 'SELECT'}}</span>
+            </v-btn>
+          </header>
+
+          <div class="payment-card-contents">
             <v-expand-transition>
               <div v-if="isPaymentSelected(payment)">
-                <div class="pt-6">
-                  <v-divider class="mb-6"></v-divider>
-                  <div v-if="(payment.type === paymentTypes.PAD)">
-                    <!-- showing PAD form for PAD selection -->
-                    <PADInfoForm
-                      :padInformation="{}"
-                      @emit-pre-auth-debit-info="getPADInfo"
-                    ></PADInfoForm>
-                  </div>
-                  <div v-else-if="(payment.type === paymentTypes.BCOL)">
-                    <!-- showing BCOL details banner -->
-                    <LinkedBCOLBanner
-                      :bcolAccountName="currentOrganization.name"
-                      :bcolAccountDetails="currentOrganization.bcolAccountDetails"
-                    ></LinkedBCOLBanner>
-                  </div>
-                  <div v-else
-                    v-html="payment.description">
-                  </div>
+
+                <!-- PAD -->
+                <div class="pad-form-container pt-7" v-if="(payment.type === paymentTypes.PAD)">
+                  <v-divider class="mb-7"></v-divider>
+                  <PADInfoForm
+                    @is-pre-auth-debit-form-valid="isPADValid"
+                    @emit-pre-auth-debit-info="getPADInfo"
+                    :isChangeView="isChangeView"
+                    :isAcknowledgeNeeded="isAcknowledgeNeeded"
+                  ></PADInfoForm>
+                </div>
+
+                <!-- BCOL -->
+                <div class="pt-7" v-else-if="(payment.type === paymentTypes.BCOL)">
+                  <!-- showing BCOL details banner -->
+                  <LinkedBCOLBanner
+                    :bcolAccountName="currentOrganization.name"
+                    :bcolAccountDetails="currentOrganization.bcolAccountDetails"
+                  ></LinkedBCOLBanner>
+                </div>
+
+                <!-- Other Payment Types -->
+                <div class="pt-7" v-else>
+                  <v-divider class="mb-7"></v-divider>
+                  <div v-html="payment.description"></div>
                 </div>
               </div>
             </v-expand-transition>
-          </div>
-
-          <div class="ml-auto pl-8">
-          <v-btn
-            depressed
-            color="primary"
-            width="120"
-            class="font-weight-bold"
-            :outlined="!isPaymentSelected(payment)"
-            @click="selectPayment(payment)"
-            :aria-label="'Select' + ' ' + payment.title"
-          >
-            <span>{{(isPaymentSelected(payment)) ? 'SELECTED' : 'SELECT'}}</span>
-          </v-btn>
           </div>
         </div>
       </v-card>
     </template>
     <!-- showing PAD form without card selector for single payment types -->
     <v-row v-else>
-      <v-col cols="9">
+      <v-col cols="9" class="py-0">
         <PADInfoForm
           :padInformation="{}"
+          @is-pre-auth-debit-form-valid="isPADValid"
           @emit-pre-auth-debit-info="getPADInfo"
+          :isChangeView="isChangeView"
+          :isAcknowledgeNeeded="isAcknowledgeNeeded"
         ></PADInfoForm>
       </v-col>
     </v-row>
@@ -77,9 +86,9 @@
 <script lang="ts">
 import { Account, PaymentTypes } from '@/util/constants'
 import { Component, Emit, Mixins, Prop, Vue } from 'vue-property-decorator'
+import { Organization, PADInfo } from '@/models/Organization'
 import ConfigHelper from '@/util/config-helper'
 import LinkedBCOLBanner from '@/components/auth/common/LinkedBCOLBanner.vue'
-import { Organization } from '@/models/Organization'
 import PADInfoForm from '@/components/auth/common/PADInfoForm.vue'
 
 const PAYMENT_METHODS = {
@@ -93,7 +102,7 @@ const PAYMENT_METHODS = {
   },
   [PaymentTypes.PAD]: {
     type: PaymentTypes.PAD,
-    icon: 'mdi-credit-card-outline',
+    icon: 'mdi-bank-outline',
     title: 'Pre-authorized Debit',
     subtitle: 'Automatically debit a bank account when payments are due.',
     description: '',
@@ -101,7 +110,7 @@ const PAYMENT_METHODS = {
   },
   [PaymentTypes.BCOL]: {
     type: PaymentTypes.BCOL,
-    icon: 'mdi-credit-card-outline',
+    icon: 'mdi-link-variant',
     title: 'BC Online',
     subtitle: 'Use your linked BC Online account for payment.',
     description: '',
@@ -129,11 +138,15 @@ const PAYMENT_METHODS = {
     LinkedBCOLBanner
   }
 })
-export default class PaymentMethodSelector extends Vue {
+export default class PaymentMethods extends Vue {
   @Prop({ default: '' }) currentOrgType: string
   @Prop({ default: undefined }) currentOrganization: Organization
+  @Prop({ default: '' }) currentSelectedPaymentMethod: string
+  @Prop({ default: false }) isChangeView: boolean
+  @Prop({ default: true }) isAcknowledgeNeeded: boolean
   private selectedPaymentMethod: string = ''
   private paymentTypes = PaymentTypes
+  private padInfo: PADInfo = {} as PADInfo
 
   // this object can define the payment methods allowed for each account tyoes
   private paymentsPerAccountType = ConfigHelper.paymentsAllowedPerAccountType()
@@ -153,9 +166,10 @@ export default class PaymentMethodSelector extends Vue {
     return (this.currentOrgType === Account.UNLINKED_PREMIUM)
   }
 
-  private selectPayment (payment) {
-    this.selectedPaymentMethod = payment.type
-    this.paymentMethodSelected()
+  private mounted () {
+    if (!this.isPADOnly) {
+      this.paymentMethodSelected({ type: this.currentSelectedPaymentMethod })
+    }
   }
 
   private isPaymentSelected (payment) {
@@ -163,20 +177,27 @@ export default class PaymentMethodSelector extends Vue {
   }
 
   @Emit()
-  private paymentMethodSelected () {
+  private paymentMethodSelected (payment) {
+    this.selectedPaymentMethod = payment.type
     return this.selectedPaymentMethod
   }
 
-  private getPADInfo (padInfo) {
-    // eslint-disable-next-line no-console
-    console.log(padInfo)
+  private getPADInfo (padInfo: PADInfo) {
+    this.padInfo = padInfo
+  }
+
+  @Emit('is-pad-valid')
+  private isPADValid (isValid) {
+    if (isValid) {
+      this.paymentMethodSelected({ type: PaymentTypes.PAD })
+    }
+    return isValid
   }
 }
 </script>
 
 <style lang="scss" scoped>
 .payment-card {
-  background-color: var(--v-grey-lighten5) !important;
   transition: all ease-out 0.2s;
 
   &:hover {
@@ -196,7 +217,16 @@ export default class PaymentMethodSelector extends Vue {
   border-color: transparent !important;
 }
 
+.payment-icon-container {
+  flex: 0 0 auto;
+  width: 4.5rem;
+}
+
 .payment-card-contents {
-  width: 100%;
+  padding-left: 4.5rem;
+}
+
+.pad-form-container {
+  max-width: 75ch;
 }
 </style>

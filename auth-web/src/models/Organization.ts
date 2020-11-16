@@ -5,12 +5,19 @@ import { Invitation } from '@/models/Invitation'
 import { User } from '@/models/user'
 
 export interface CreateRequestBody {
-  name: string,
+  name?: string,
   typeCode?: string
   accessType?: string
   bcOnlineCredential?:BcolProfile
   mailingAddress?:Address
-  paymentMethod?: string
+  paymentInfo?: PaymentInfo
+}
+
+export interface PaymentInfo {
+  paymentMethod: string
+  bankTransitNumber?: string
+  bankInstitutionNumber?: string
+  bankAccountNumber?: string
 }
 
 export interface Organizations
@@ -35,6 +42,25 @@ export interface Organization {
   paymentSettings?: any,
   bcolAccountId?: string,
   bcolUserId?: string
+}
+
+export interface PADInfo {
+  bankAccountNumber: string;
+  bankInstitutionNumber: string;
+  bankTransitNumber: string;
+  isTOSAccepted?: boolean;
+  isAcknowledged?: boolean;
+}
+
+export interface PADInfoValidation {
+  accountNumber?: string;
+  bankName?: string;
+  bankNumber?: string;
+  branchNumber?: string;
+  isValid?: boolean;
+  message?: string []
+  statusCode: number
+  transitAddress?: string
 }
 
 export interface UpdateMemberPayload {

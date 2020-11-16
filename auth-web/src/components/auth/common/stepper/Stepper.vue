@@ -1,5 +1,5 @@
 <template>
-  <v-stepper class="stepper d-flex elevation-2" v-model="currentStepNumber">
+  <v-stepper class="stepper d-flex elevation-0" v-model="currentStepNumber">
     <v-container class="stepper-nav pa-10 pr-0">
       <template v-for="step in steps">
         <v-stepper-step
@@ -13,6 +13,11 @@
     </v-container>
     <v-divider vertical class="my-10"></v-divider>
     <v-container class="stepper-content pa-12">
+      <v-fade-transition>
+        <div v-if="isLoading" class="loading-container">
+          <v-progress-circular size="50" width="5" color="primary" :indeterminate="isLoading"/>
+        </div>
+      </v-fade-transition>
       <div v-for="step in steps" :key="getStepIndex(step)" class="flex-grow">
         <template v-if="getStepIndex(step) === currentStepNumber">
           <div class="stepper-content__count mb-1 text--secondary">Step {{currentStepNumber}} of {{steps.length}}</div>
@@ -52,6 +57,7 @@ export interface StepConfiguration {
 export default class Stepper extends Vue {
   @Prop({ default: null }) stepperConfiguration!: StepConfiguration[]
   @Prop({ default: '/business' }) redirectWhenDone!: string
+  @Prop({ default: false }) isLoading!: boolean
   private steps: StepConfiguration[]
   private currentStepNumber = 1
   private useAlternateStep = false
@@ -151,7 +157,8 @@ export default class Stepper extends Vue {
   }
 
   @media (max-width: 1024px) {
-    .stepper {
+    .stepper-nav,
+    .stepper-nav + hr {
       display: none;
     }
   }
@@ -314,6 +321,11 @@ export default class Stepper extends Vue {
         }
       }
     }
+  }
+
+  .loading-container {
+    background: rgba(255,255,255, 0.8);
+    z-index: 1;
   }
 
   // Stepper Content

@@ -179,13 +179,14 @@ export default class AccountTypeSelector extends Mixins(Steppable) {
         this.setAccountTypeBeforeChange(this.currentOrganization.orgType)
       }
       this.selectedAccountType = this.currentOrganization.orgType
+      this.setCurrentOrganizationType(this.selectedAccountType)
     } else {
       // first time to the page , start afresh..this is Create New account flow
       if (!this.currentOrganization) {
         this.setCurrentOrganization({ name: '' })
-      } else {
-        this.selectedAccountType = this.currentOrganization.orgType
       }
+      this.selectedAccountType = (this.currentOrganizationType === this.ACCOUNT_TYPE.UNLINKED_PREMIUM)
+        ? this.ACCOUNT_TYPE.PREMIUM : this.currentOrganizationType
       this.setAccessType(this.getOrgAccessType())
     }
   }

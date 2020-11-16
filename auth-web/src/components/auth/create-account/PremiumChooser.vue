@@ -1,28 +1,38 @@
 <template>
 <v-container>
   <v-form ref="premiumAccountChooser" lazy-validation>
-    <p class="mt-3">Do you want to link this account with an existing BC Online Account?
+    <p class="mb-6">
+      <span>Do you want to link this account with an existing BC Online Account?</span>
+      &nbsp;
       <v-btn
         text
-        class="learn-more-btn"
         color="primary"
-        @click="learnMoreDialog = true">Learn more</v-btn>
+        class="learn-more-btn"
+        @click="learnMoreDialog = true"
+      >
+        Learn more
+      </v-btn>
     </p>
-    <v-radio-group class="mb-3" @change="loadComponent" v-model="isBcolSelected">
+    <v-radio-group
+      hide-details
+      class="mb-9"
+      @change="loadComponent"
+      v-model="isBcolSelected"
+    >
       <v-radio label="Yes" value="yes" />
       <v-radio label="No" value="no" />
     </v-radio-group>
-    <v-divider />
-    <component
+
+    <component class="mt-5 pa-0"
       ref="activeComponent"
-      class="pl-0"
       :is="currentComponent"
       :step-back="stepBack"
       :step-forward="stepForward"
     />
+
     <template v-if="!isBcolSelected">
-      <v-divider />
-      <v-row class="my-5">
+      <v-divider class="mt-4 mb-10"></v-divider>
+      <v-row>
         <v-col cols="12" class="form__btns py-0 d-inline-flex">
           <v-btn
             large
@@ -38,7 +48,6 @@
               <v-icon right class="ml-1">mdi-arrow-right</v-icon>
             </span>
             <span v-if="isAccountChange">Change Account</span>
-
           </v-btn>
           <ConfirmCancelButton
             :clear-current-org="!isAccountChange"
@@ -47,6 +56,7 @@
         </v-col>
       </v-row>
     </template>
+
   </v-form>
   <!-- Learn More Popup -->
   <v-dialog
@@ -138,10 +148,10 @@ import Vue from 'vue'
       'setCurrentOrganizationType'
     ]),
     ...mapActions('org', [
-      'createOrg',
       'syncMembership',
       'syncOrganization',
-      'changeOrgType'
+      'changeOrgType',
+      'resetAccountWhileSwitchingPremium'
     ])
   }
 })
@@ -157,6 +167,7 @@ export default class PremiumChooser extends Mixins(Steppable) {
   private readonly setCurrentOrganizationType!: (orgType: string) => void
   private readonly changeOrgType!: (action: Actions) => Promise<Organization>
   private readonly syncOrganization!: (orgId: number) => Promise<Organization>
+  private readonly resetAccountWhileSwitchingPremium!: () => void
   private learnMoreDialog: boolean = false
 
   $refs: {
@@ -166,12 +177,16 @@ export default class PremiumChooser extends Mixins(Steppable) {
   private mounted () {
     if (!this.isAccountChange) {
       this.isBcolSelected = ((this.currentOrganizationType === Account.PREMIUM) && this.currentOrganization?.bcolProfile) ? 'yes' : null
-      this.isBcolSelected = (this.currentOrganizationType === Account.UNLINKED_PREMIUM && this.currentOrganization?.name) ? 'no' : this.isBcolSelected
-      this.loadComponent()
+      this.isBcolSelected = ((this.currentOrganizationType === Account.UNLINKED_PREMIUM) && this.currentOrganization?.name) ? 'no' : this.isBcolSelected
+      this.loadComponent(false)
     }
   }
 
-  private loadComponent () {
+  private loadComponent (isReset?) {
+    if (isReset) {
+      // Reset the data only if the user perform choices from this page.
+      this.resetAccountWhileSwitchingPremium()
+    }
     if (this.isBcolSelected === 'yes') {
       this.setCurrentOrganizationType(Account.PREMIUM)
       this.currentComponent = AccountCreatePremium
@@ -198,35 +213,41 @@ export default class PremiumChooser extends Mixins(Steppable) {
 </script>
 
 <style lang="scss" scoped>
-.learn-more-btn {
-  padding-left: 0 !important;
-  text-decoration: underline !important;
-}
-
-.v-btn.bcol-link {
-  text-align: left;
-
-  .v-icon {
-    margin-top: 0.1rem;
-    margin-right: 0.5rem;
-  }
-
-  span {
+  .learn-more-btn {
+    height: auto !important;
+    padding: 0.2rem 0.2rem !important;
+    font-size: 1rem !important;
     text-decoration: underline;
   }
-}
 
-ul {
-  list-style: none; /* Remove default bullets */
-  margin-bottom: 16px;
-}
+  p .learn-more-btn {
+    margin-top: -0.25rem;
+  }
 
-ul li::before {
-  content: "\2022";  /* Add content: \2022 is the CSS Code/unicode for a bullet */
-  color: var(--v-primary-base);
-  font-weight: 700;
-  display: inline-block;
-  width: 1.5rem;
-  margin-left: -1.5rem;
-}
+  .v-btn.bcol-link {
+    text-align: left;
+
+    .v-icon {
+      margin-top: 0.1rem;
+      margin-right: 0.5rem;
+    }
+
+    span {
+      text-decoration: underline;
+    }
+  }
+
+  ul {
+    list-style: none; /* Remove default bullets */
+    margin-bottom: 16px;
+  }
+
+  ul li::before {
+    content: "\2022";  /* Add content: \2022 is the CSS Code/unicode for a bullet */
+    color: var(--v-primary-base);
+    font-weight: 700;
+    display: inline-block;
+    width: 1.5rem;
+    margin-left: -1.5rem;
+  }
 </style>

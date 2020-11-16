@@ -34,22 +34,13 @@
               </div>
             </div>
           </div>
-          <div class="nv-list-item mb-6" v-if="isPremiumAccount">
+          <div class="nv-list-item mb-10" v-if="currentOrganization.bcolAccountDetails">
             <div class="name mt-3" id="accountName">Linked BC Online Account Details</div>
             <div class="value">
-              <v-alert dark color="primary" class="py-3 px-4">
-                <div class="font-weight-bold">
-                  {{ currentOrganization.name }}
-                </div>
-                <ul class="bcol-acc__meta" v-if="isPremiumAccount">
-                  <li>
-                    BC Online Account No: {{currentOrganization.bcolAccountId}}
-                  </li>
-                  <li>
-                    Prime Contact ID: {{currentOrganization.bcolUserId}}
-                  </li>
-                </ul>
-              </v-alert>
+              <LinkedBCOLBanner
+                :bcolAccountName="currentOrganization.name"
+                :bcolAccountDetails="currentOrganization.bcolAccountDetails"
+              ></LinkedBCOLBanner>
             </div>
           </div>
         </template>
@@ -111,6 +102,7 @@
               :color="btnLabel == 'Saved' ? 'success' : 'primary'"
               :disabled="!isSaveEnabled()"
               :loading="btnLabel == 'Saving'"
+              aria-label="Save Account Information"
               @click="updateDetails()"
             >
               <v-expand-x-transition>
@@ -123,6 +115,7 @@
               depressed
               class="ml-2"
               color="default"
+              aria-label="Reset Account Information"
               @click="resetForm"
               data-test="reset-button"
             >Reset</v-btn>
@@ -144,6 +137,7 @@ import { Address } from '@/models/address'
 import BaseAddressForm from '@/components/auth/common/BaseAddressForm.vue'
 import ConfigHelper from '@/util/config-helper'
 import LaunchDarklyService from 'sbc-common-components/src/services/launchdarkly.services'
+import LinkedBCOLBanner from '@/components/auth/common/LinkedBCOLBanner.vue'
 import OrgAdminContact from '@/components/auth/account-settings/account-info/OrgAdminContact.vue'
 import OrgModule from '@/store/modules/org'
 import { addressSchema } from '@/schemas'
@@ -152,7 +146,8 @@ import { getModule } from 'vuex-module-decorators'
 @Component({
   components: {
     BaseAddressForm,
-    OrgAdminContact
+    OrgAdminContact,
+    LinkedBCOLBanner
   },
   computed: {
     ...mapState('org', [

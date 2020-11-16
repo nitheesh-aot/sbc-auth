@@ -1,5 +1,5 @@
-import Axios, { AxiosPromise } from 'axios'
 import { FilingTypeResponse, GLCode, GLCodeResponse } from '@/models/Staff'
+import { PADInfo, PADInfoValidation } from '@/models/Organization'
 import {
   StatementFilterParams,
   StatementListItem,
@@ -8,10 +8,9 @@ import {
   StatementSettings
 } from '@/models/statement'
 import { TransactionFilter, TransactionFilterParams, TransactionListResponse } from '@/models/transaction'
+import { AxiosPromise } from 'axios'
 import ConfigHelper from '@/util/config-helper'
-import { addAxiosInterceptors } from 'sbc-common-components/src/util/interceptors'
-
-const axios = addAxiosInterceptors(Axios.create())
+import { axios } from '@/util/http-util.ts'
 
 export default class PaymentService {
   static createTransaction (paymentId: string, redirectUrl: string): AxiosPromise<any> {
@@ -95,5 +94,9 @@ export default class PaymentService {
 
   static updateGLCodeFiling (glcodeFilingData: GLCode): AxiosPromise<GLCodeResponse> {
     return axios.put(`${ConfigHelper.getPayAPIURL()}/fees/distributions/${glcodeFilingData.distributionCodeId}`, glcodeFilingData)
+  }
+
+  static verifyPADInfo (padInfo: PADInfo): AxiosPromise<PADInfoValidation> {
+    return axios.post(`${ConfigHelper.getPayAPIURL()}/bank-accounts/verifications`, padInfo)
   }
 }

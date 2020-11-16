@@ -1,5 +1,5 @@
 <template>
-  <v-form class="pt-5" ref="createAccountInfoForm">
+  <v-form class="mt-8" ref="createAccountInfoForm">
     <fieldset>
       <legend class="mb-3">Enter an Account Name</legend>
       <v-slide-y-transition>
@@ -27,7 +27,7 @@
       />
     </fieldset>
 
-    <v-divider class="my-10"></v-divider>
+    <v-divider class="mt-4 mb-10"></v-divider>
 
     <v-row>
       <v-col cols="12" class="form__btns py-0 d-inline-flex">
@@ -96,7 +96,7 @@ import { getModule } from 'vuex-module-decorators'
     ...mapMutations('org', [
       'setCurrentOrganization', 'setOrgName', 'setCurrentOrganizationAddress'
     ]),
-    ...mapActions('org', ['createOrg', 'syncMembership', 'syncOrganization', 'isOrgNameAvailable', 'changeOrgType'])
+    ...mapActions('org', ['syncMembership', 'syncOrganization', 'isOrgNameAvailable', 'changeOrgType'])
   }
 })
 export default class AccountCreateBasic extends Mixins(Steppable) {
@@ -104,7 +104,6 @@ export default class AccountCreateBasic extends Mixins(Steppable) {
   private errorMessage: string = ''
   private saving = false
   private isBasicAccount: boolean = true
-  private readonly createOrg!: () => Promise<Organization>
   private readonly changeOrgType!: (action:Actions) => Promise<Organization>
   private readonly syncMembership!: (orgId: number) => Promise<Member>
   private readonly syncOrganization!: (orgId: number) => Promise<Organization>

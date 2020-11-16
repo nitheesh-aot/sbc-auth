@@ -52,13 +52,13 @@
     <v-row>
       <v-col cols="12" class="pt-0 pb-0">
         <v-text-field
-                filled
-                label="Email Address"
-                req
-                persistent-hint
-                :rules="emailRules"
-                v-model="emailAddress"
-                data-test="email"
+          filled
+          label="Email Address"
+          req
+          persistent-hint
+          :rules="emailRules"
+          v-model="emailAddress"
+          data-test="email"
         >
         </v-text-field>
       </v-col>
@@ -66,13 +66,13 @@
     <v-row>
       <v-col cols="12" class="pt-0 pb-0">
         <v-text-field
-                filled
-                label="Confirm Email Address"
-                req
-                persistent-hint
-                :error-messages="emailMustMatch()"
-                v-model="confirmedEmailAddress"
-                data-test="confirm-email"
+          filled
+          label="Confirm Email Address"
+          req
+          persistent-hint
+          :error-messages="emailMustMatch()"
+          v-model="confirmedEmailAddress"
+          data-test="confirm-email"
         >
         </v-text-field>
       </v-col>
@@ -80,26 +80,26 @@
     <v-row>
       <v-col cols="12" md="6" class="pt-0 pb-0">
         <v-text-field
-                filled
-                label="Phone Number"
-                persistent-hint
-                type="tel"
-                v-mask="['(###) ###-####']"
-                v-model="phoneNumber"
-                hint="Example: (555) 555-5555"
-                :rules="phoneRules"
-                data-test="phone"
+          filled
+          label="Phone Number"
+          persistent-hint
+          type="tel"
+          v-mask="['(###) ###-####']"
+          v-model="phoneNumber"
+          hint="Example: (555) 555-5555"
+          :rules="phoneRules"
+          data-test="phone"
         >
         </v-text-field>
       </v-col>
       <v-col cols="12" md="3" class="pt-0 pb-0">
         <v-text-field
-                filled label="Extension"
-                persistent-hint
-                :rules="extensionRules"
-                v-mask="'#####'"
-                v-model="extension"
-                data-test="phone-extension"
+          filled label="Extension"
+          persistent-hint
+          :rules="extensionRules"
+          v-mask="'#####'"
+          v-model="extension"
+          data-test="phone-extension"
         >
         </v-text-field>
       </v-col>
@@ -268,7 +268,10 @@ import { mask } from 'vue-the-mask'
     mask
   },
   computed: {
-    ...mapState('org', ['currentOrganization'])
+    ...mapState('org', ['currentOrganization']),
+    ...mapState('user', [
+      'userProfileData'
+    ])
   },
   methods: {
     ...mapMutations('user', ['setUserProfileData']),
@@ -280,7 +283,7 @@ import { mask } from 'vue-the-mask'
         'createAffidavit',
         'updateUserFirstAndLastName'
       ]),
-    ...mapActions('org', ['createOrg', 'syncMembership', 'syncOrganization'])
+    ...mapActions('org', ['syncMembership', 'syncOrganization'])
   }
 })
 export default class UserProfileForm extends Mixins(NextPageMixin, Steppable) {
@@ -303,7 +306,7 @@ export default class UserProfileForm extends Mixins(NextPageMixin, Steppable) {
     private isDeactivating = false
     @Prop() token: string
     readonly currentOrganization!: Organization
-    private readonly createOrg!: () => Promise<Organization>
+    readonly userProfileData!: UserProfileData
     readonly syncMembership!: (orgId: number) => Promise<Member>
     readonly syncOrganization!: (orgId: number) => Promise<Organization>
     private readonly ACCOUNT_TYPE = Account
@@ -374,13 +377,23 @@ export default class UserProfileForm extends Mixins(NextPageMixin, Steppable) {
       if (!this.userProfile) {
         await this.getUserProfile('@me')
       }
-      this.firstName = this.userProfile?.firstname
-      this.lastName = this.userProfile?.lastname
-      this.emailAddress = this.userProfile?.email
+      let user: any = {}
+      if (this.userProfileData) {
+        user = this.userProfileData
+      } else {
+        user = { ...this.userProfile }
+        user.email = this.userContact?.email
+        user.phone = this.userContact?.phone
+        user.phoneExtension = this.userContact?.phoneExtension
+      }
+      this.firstName = user?.firstname || ''
+      this.lastName = user?.lastname || ''
+      this.emailAddress = user?.email || ''
+      this.emailAddress = this.confirmedEmailAddress = user?.email || ''
+      this.phoneNumber = user?.phone || ''
+      this.extension = user?.phoneExtension || ''
+
       if (this.userContact) {
-        this.emailAddress = this.confirmedEmailAddress = this.userContact.email
-        this.phoneNumber = this.userContact.phone
-        this.extension = this.userContact.phoneExtension
         this.editing = true
       }
 
